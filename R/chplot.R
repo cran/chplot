@@ -1,34 +1,33 @@
-chplot <-function(x,y,groups,chull=TRUE,clevel=0.95,band.power=.2,mar.den=FALSE,descriptives="mean.sd",dlevel=.68,bw=FALSE,ratio=.75,plot.points=FALSE,log="",xlab,ylab,legend,...){
-
-    nt<-dim(x)[2]
-    xnam<-names(x)
+chplot <-function(formula,data=parent.frame(),chull=TRUE,clevel=0.95,band.power=.2,mar.den=FALSE,descriptives="mean.sd",dlevel=.68,bw=FALSE,ratio=.75,plot.points=FALSE,log="",xlab,ylab,col,lty,legend,...){
+        
     if(missing(legend))legend <- legend.control(...)
-    if(missing(xlab)){
-	if(!is.null(xnam)) xlabel<-xnam[1]
-	else if(!is.null(nt)) xlabel<-""
-	else xlabel<-deparse(substitute(x))
-    }
-    else xlabel<-xlab
-    if(missing(ylab)){
-	if(!is.null(xnam)) ylabel<-xnam[2]
-	else if(!is.null(nt)) ylabel<-""
-	else ylabel<-deparse(substitute(y))
-    }
-    else ylabel<-ylab
-    if(is.na(legend$title)){
-	if(!is.null(xnam)) legend.title<-xnam[3]
-	else if(!is.null(nt)) legend.title<-""
-	else legend.title<-deparse(substitute(groups))
-    }
-    else legend.title <- legend$title
     
-    if(!is.null(nt)){
-	if(nt==3) groups<-x[,3]
-	if(nt>=2){
-	    y<-x[,2]
-	    x<-x[,1] 
-	}
-    } 	
+    form <- latticeParseFormula(formula, data)	
+    
+    if(length(names(form$condition))>1)stop("Only 1 grouping variable is allowed")
+    else if(is.null(form$condition)){
+    	groups <- rep(1,length(form$left))
+    	nogroups <- TRUE
+    	legend$include <- FALSE
+    }
+    else{    
+	    groups <- form$condition[[1]]	
+	    if(is.na(legend$title)) legend.title <- names(form$condition)
+	    else legend.title <- legend$title
+	    nogroups <- FALSE
+    }
+    
+    
+        
+    if(missing(xlab)) xlabel <- form$right.name
+    else xlabel<-xlab
+    x <- form$right
+    
+    if(missing(ylab)) ylabel<- form$left.name
+    else ylabel<-ylab
+    y <- form$left
+    
+    
     if(is.na(legend$area.in))area.in<-chull
     else area.in <- legend$area.in
         
@@ -41,6 +40,32 @@ chplot <-function(x,y,groups,chull=TRUE,clevel=0.95,band.power=.2,mar.den=FALSE,
     
  
     faktor<-factor(groups)
+    nlev <- nlevels(faktor)
+    
+    
+    if(bw){
+    	if(!missing(lty)){
+    		ltyps <- lty
+    		if(length(ltyps)!=nlev)stop("length of lty is not equal to ",nlev)
+    	}
+    	else if(nogroups) ltyps <- 1
+    	else ltyps <- 2:(nlev+1)
+    	colrs <- rep(1,nlev)
+    }
+    else{
+    	if(!missing(col)){
+    		colrs <- col
+    		if(length(col)!=nlev)stop("length of col is not equal to ",nlev)
+    	}
+    	else if(nogroups) colrs <- 1
+    	else colrs <- 2:(nlev+1)
+    	if(!missing(lty)){
+    		ltyps <- lty
+    		if(length(ltyps)!=nlev)stop("length of lty is not equal to ",nlev)
+    	}
+    	else ltyps <- rep(1,nlev)
+    }
+    
 
     na.check<-as.logical((!is.na(faktor))*(!is.na(x))*(!is.na(y)))
     if(sum(!na.check)>0) {
@@ -75,58 +100,48 @@ chplot <-function(x,y,groups,chull=TRUE,clevel=0.95,band.power=.2,mar.den=FALSE,
     }
 	
    	
-    my.polygon <- function(d,data,bw,faktor,area.in){
-	if(bw) {line<-d+1; paint<-1} 
-	else {paint<-d+1; line<-1}
+    my.polygon <- function(d,data,faktor,area.in){
 	points<-(data[as.integer(faktor)==d,])[chull(data[as.integer(faktor)==d,1:2]),1:2]
-	polygon(points,lty=line,border=paint)
+	polygon(points,lty=ltyps[d],border=colrs[d])
 	if(area.in)area.fun(points)/length(data[as.integer(faktor)==d])
     }
 
-    my.line.list <- function(d,data,bw,faktor,clevel,bandwidth,area.in){
-	if(bw) {line<-d+1; paint<-1} 
-	else {paint<-d+1; line<-1}
+    my.line.list <- function(d,data,faktor,clevel,bandwidth,area.in){
 	est<-bkde2D(data[as.integer(faktor)==d,],bandwidth=nrow(data[as.integer(faktor)==d,])^(-bandwidth))
 	line.list<-contourLines(est$x1,est$x2,est$fhat,nlevels=1,levels=1-clevel)
 	line.list<-cbind(line.list[[1]][[2]],line.list[[1]][[3]])
-	lines(line.list,lty=line,col=paint)
+	lines(line.list,lty=ltyps[d],col=colrs[d])
 	if(area.in)area.fun(line.list)/length(data[as.integer(faktor)==d,])
     }    
 
 
-    my.lines.mean <- function(d,x,y,bw,faktor,sd,dlevel){
+    my.lines.mean <- function(d,x,y,faktor,sd,dlevel){
         msd<-abs(qnorm((1-dlevel)/2))
 	podx<-x[as.integer(faktor)==d]
 	pody<-y[as.integer(faktor)==d]
-	if(bw) {line<-d+1; paint<-1} 
-	else {paint<-d+1; line<-1}
 	if(sd){
-	    lines(c(mean(podx)-msd*sqrt(var(podx)),mean(podx)+msd*sqrt(var(podx))),c(mean(pody),mean(pody)),lty=line,col=paint)
-	    lines(c(mean(podx),mean(podx)),c(mean(pody)-msd*sqrt(var(pody)),mean(pody)+msd*sqrt(var(pody))),lty=line,col=paint)
+	    lines(c(mean(podx)-msd*sqrt(var(podx)),mean(podx)+msd*sqrt(var(podx))),c(mean(pody),mean(pody)),lty=ltyps[d],col=colrs[d])
+	    lines(c(mean(podx),mean(podx)),c(mean(pody)-msd*sqrt(var(pody)),mean(pody)+msd*sqrt(var(pody))),lty=ltyps[d],col=colrs[d])
 	}
 	else{
-	    lines(c(mean(podx)-msd*sqrt(var(podx)/length(podx)),mean(podx)+msd*sqrt(var(podx)/length(podx))),c(mean(pody),mean(pody)),lty=line,col=paint)
-	    lines(c(mean(podx),mean(podx)),c(mean(pody)-msd*sqrt(var(pody)/length(pody)),mean(pody)+msd*sqrt(var(pody)/length(pody))),lty=line,col=paint)
+	    lines(c(mean(podx)-msd*sqrt(var(podx)/length(podx)),mean(podx)+msd*sqrt(var(podx)/length(podx))),c(mean(pody),mean(pody)),lty=ltyps[d],col=colrs[d])
+	    lines(c(mean(podx),mean(podx)),c(mean(pody)-msd*sqrt(var(pody)/length(pody)),mean(pody)+msd*sqrt(var(pody)/length(pody))),lty=ltyps[d],col=colrs[d])
 	}
     }
 
-    my.lines.median <- function(d,x,y,bw,faktor){
+    my.lines.median <- function(d,x,y,faktor){
 	podx<-x[as.integer(faktor)==d]
 	pody<-y[as.integer(faktor)==d]
-	if(bw) {line<-d+1; paint<-1} 
-	else {paint<-d+1; line<-1}
-	lines(c(quantile(podx,.25),quantile(podx,.75)),c(median(pody),median(pody)),lty=line,col=paint)
-	lines(c(median(podx),median(podx)),c(quantile(pody,.25),quantile(pody,.75)),lty=line,col=paint)
+	lines(c(quantile(podx,.25),quantile(podx,.75)),c(median(pody),median(pody)),lty=ltyps[d],col=colrs[d])
+	lines(c(median(podx),median(podx)),c(quantile(pody,.25),quantile(pody,.75)),lty=ltyps[d],col=colrs[d])
     }
 
 
 
-    my.ellipse <- function(d,x,y,bw,faktor,level){
+    my.ellipse <- function(d,x,y,faktor,level){
 	podx<-x[as.integer(faktor)==d]
 	pody<-y[as.integer(faktor)==d]
-	if(bw) {line<-d+1; paint<-1} 
-	else {paint<-d+1; line<-1}
-	lines(ellipse(cov(cbind(podx,pody)),centre=c(mean(podx),mean(pody)),scale=c(sqrt( 1/length(podx) ),sqrt( 1/length(pody) )),level=level),lty=line,col=paint)
+	lines(ellipse(cov(cbind(podx,pody)),centre=c(mean(podx),mean(pody)),scale=c(sqrt( 1/length(podx) ),sqrt( 1/length(pody) )),level=level),lty=ltyps[d],col=colrs[d])
     }
 
 
@@ -151,20 +166,20 @@ chplot <-function(x,y,groups,chull=TRUE,clevel=0.95,band.power=.2,mar.den=FALSE,
 
     
 
-    if(chull) area<-unlist(lapply(kode,my.polygon,cbind(x,y),bw,faktor,area.in))
-    else area<-unlist(lapply(kode,my.line.list,cbind(x,y),bw,faktor,clevel,band.power,area.in))
+    if(chull) area<-unlist(lapply(kode,my.polygon,cbind(x,y),faktor,area.in))
+    else area<-unlist(lapply(kode,my.line.list,cbind(x,y),faktor,clevel,band.power,area.in))
     
 
     if(area.in) area<-format(area,digits=2)
 
 
-    if(descriptives=="mean.sd")	lapply(kode,my.lines.mean,x,y,bw,faktor,sd=TRUE,dlevel)
+    if(descriptives=="mean.sd")	lapply(kode,my.lines.mean,x,y,faktor,sd=TRUE,dlevel)
 	
-    else if(descriptives=="mean.se") lapply(kode,my.lines.mean,x,y,bw,faktor,sd=FALSE,dlevel)
+    else if(descriptives=="mean.se") lapply(kode,my.lines.mean,x,y,faktor,sd=FALSE,dlevel)
 	
-    else if(descriptives=="median") lapply(kode,my.lines.median,x,y,bw,faktor)
+    else if(descriptives=="median") lapply(kode,my.lines.median,x,y,faktor)
 	
-    else if(descriptives=="ellipse") lapply(kode,my.ellipse,x,y,bw,faktor,dlevel)
+    else if(descriptives=="ellipse") lapply(kode,my.ellipse,x,y,faktor,dlevel)
     
 
     if(mar.den)lister<-get("my.dense")
@@ -183,9 +198,7 @@ chplot <-function(x,y,groups,chull=TRUE,clevel=0.95,band.power=.2,mar.den=FALSE,
 
     
     for(i in 1:length(lista)){
-	if(bw) {line<-i+1; paint<-1} 	
-	else {paint<-i+1; line<-1}
-	points(lista[[i]][,1],lista[[i]][,2]*maxbreak,type="l",col=paint,lty=line)
+	points(lista[[i]][,1],lista[[i]][,2]*maxbreak,type="l",lty=ltyps[i],col=colrs[i])
     }
 
     usru<-par("usr")
@@ -204,9 +217,7 @@ chplot <-function(x,y,groups,chull=TRUE,clevel=0.95,band.power=.2,mar.den=FALSE,
     else plot(c(0,height),c(min(y),max(y)),axes=FALSE,xlab="",ylab="",type="n") 	
 
     for(i in 1:length(lista)){
-	if(bw) {line<-i+1; paint<-1} 
-	else {paint<-i+1; line<-1}
-	points(lista[[i]][,2]*maxbreak,lista[[i]][,1],type="l",col=paint,lty=line)
+	points(lista[[i]][,2]*maxbreak,lista[[i]][,1],type="l",lty=ltyps[i],col=colrs[i])
 
     }
 
@@ -253,16 +264,15 @@ chplot <-function(x,y,groups,chull=TRUE,clevel=0.95,band.power=.2,mar.den=FALSE,
 	    xy<-list(x=0,y=.9)
 	    if(!is.na(legend$cex))cex.size<-legend$cex
 	    else{
-		if(area.in)cex.size<-(2/3)^((ratio-.65)*10)*12/(max.len+6)*(.93)^bw
-		else cex.size<-(2/3)^((ratio-.65)*10)*10/max.len*(.93)^bw
+		if(area.in)cex.size<-(2/3)^((ratio-.65)*10)*12/(max.len+6)*(.93)
+		else cex.size<-(2/3)^((ratio-.65)*10)*10/max.len*(.93)
 		if(cex.size>1)cex.size<-1
 	    }
 	    text(wz,legend.title,pos=4,cex=cex.size+.1)	
 	    if(!is.na(legend$bty))btype<-legend$bty
 	    else btype<-"n"
 	}
-	if(bw)legend(xy, legend=legend.text,lty=as.integer(factor(levels(faktor)))+1,ncol=1,bty=btype,cex=cex.size)
-	else legend(xy,legend=legend.text, fill=as.integer(factor(levels(faktor)))+1,ncol=1,bty=btype,cex=cex.size)
+	legend(xy,legend=legend.text, lty=ltyps,col=colrs,ncol=1,bty=btype,cex=cex.size,lwd=2*cex.size)
     }
     par(fig=c(0,1,0,1),mar=c(5,4,2,2),new=TRUE)
     par(usr=c(0,1,0,1))

@@ -22,14 +22,13 @@ logical; if \code{TRUE}, the area per point is calculated for each group and inc
 the legend. The default is \code{TRUE} if \code{chull=TRUE} and \code{FALSE} otherwise.
 }
 \item{cex}{
- A numerical value giving the amount by which text in the legend should be scaled relative to the default.
+a numerical value giving the amount by which text in the legend should be scaled relative to the default.
 }
 \item{bty}{
 the type of box to be drawn around the legend. See \code{par}.
 }
 \item{title}{
-the title of the legend; the default is the name of the grouping
-variable.
+the title of the legend; the default is the name of the grouping variable.
 }
 }
 
@@ -37,6 +36,6 @@ variable.
 A list with the same elements as the input.
 }
 
-\seealso{\code{chplot}.}
+\seealso{\code{\link{chplot}}.}
 
 \keyword{hplot}

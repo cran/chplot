@@ -11,21 +11,22 @@
   of convex hull per point can be displayed.
 }
 \usage{
-chplot(x,y,groups,chull=TRUE,clevel=0.95,band.power=.2,
+chplot(formula,data,chull=TRUE,clevel=0.95,band.power=.2,
 mar.den=FALSE,descriptives="mean.sd",dlevel=0.68,bw=FALSE,ratio=.75,
-plot.points=FALSE,log="",xlab,ylab,legend,...)
+plot.points=FALSE,log="",xlab,ylab,col,lty,legend,...)
 }
 \arguments{
-\item{x}{a matrix of three columns, representing the x and y
-coordinates and the grouping variable, respectively. Alternatively, \code{x}
-can have just two columns (the second is regarded as y) or just be a
-vector of x coordinates. If \code{x} is a data.frame, the names of the
-variables are used for the axes and legend title.
+\item{formula}{
+a formula describing the form of conditioning plot. The
+formula is generally of the form \code{y ~ x | g1}, indicating that
+ plots of \code{y} (on the y axis) versus \code{x} (on the x axis)
+ should be produced conditional on the variable \code{g1}.
+ However, the conditioning variable \code{g1} may be omitted.
+ The names of the \code{y}, \code{x} and \code{g1} variables are used
+ for the axes and legend title.
 }
-\item{y}{
-the y coordinates of points in the plot, optional if \code{x} is an appropriate structure.
-}
-\item{groups}{group codes of points in the plot, optional if \code{x} is an appropriate structure.
+\item{data}{
+a data frame containing values for any variables in the formula.
 }
 \item{chull}{
  logical; if \code{TRUE} (default), convex hulls are plotted,
@@ -84,11 +85,13 @@ the x variable.
 a title for the y axis in the main plot; the default is the name of
 the y variable.
 }
+\item{col}{the plotting colors; vector of length equalling the number of groups.}
+\item{lty}{the type of line; vector of length equalling the number of groups.}
 \item{legend}{
 object of class \code{legend.control} specifying various parameters for the legend.
  Default is \code{legend.control(...)}. 
 }
-\item{...}{other arguments will be passed to \code{legend.control}}
+\item{...}{other arguments will be passed to \code{legend.control}}.
 }
 
 \details{
@@ -104,7 +107,7 @@ area does not provide a sensible measure.
 }
 
 \value{
-a list with components:
+A list with components:
 \item{usrc}{the limits of the central plotting region.}
 \item{usru}{the limits of the top left plotting region.}
 \item{usrr}{the limits of the bottom right plotting region.}
@@ -115,15 +118,21 @@ a list with components:
  or  \code{log="xy"} was used.}
 }
 
+
+\references{
+Vidmar, G., and Pohar, M. Augmented convex hull plots: rationale, implementation in R and
+biomedical applications. \emph{Computer Methods and Programs in Biomedicine}, 2005, in press.
+}
+
 \examples{
 # the hdr dataset
 data(hdr)
-chplot(hdr,log="x")
+chplot(age~income|gender,data=hdr,log="x")
 # the iris dataset
 data(iris)
-chplot(iris[,c(1,2,5)],bw=TRUE,legend.control(cex=.6))
+chplot(Sepal.Length~Sepal.Width|Species,data=iris,bw=TRUE,legend=legend.control(cex=.6))
 }
 
-\seealso{\code{chadd}, \code{chull}, \code{bkde2D}, \code{legend.control}. }
+\seealso{\code{\link{chadd}}, \code{\link{chull}}, \code{\link{bkde2D}}, \code{\link{legend.control}}. }
 
 \keyword{hplot}

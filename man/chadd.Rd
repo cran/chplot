@@ -27,13 +27,13 @@ the plotting region to which an element is to be added: \code{1} for the main pl
 \examples{
 data(hdr)
 # hdr dataset
-param<-chplot(hdr,log="x")
+param<-chplot(age~income|gender,data=hdr,log="x")
 # box around the legend region
 chadd(param,3,box,"figure")
 # tickmark for overall mean in marginal distribution plots
 chadd(param,2,lines,c(mean(hdr$income),mean(hdr$income)),c(0,.05))
 chadd(param,4,lines,c(0,.025),c(mean(hdr$age),mean(hdr$age)))
 }
-\seealso{\code{chplot}.}
+\seealso{\code{\link{chplot}}.}
 
 \keyword{aplot}
