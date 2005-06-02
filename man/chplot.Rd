@@ -121,7 +121,7 @@ A list with components:
 
 \references{
 Vidmar, G., and Pohar, M. Augmented convex hull plots: rationale, implementation in R and
-biomedical applications. \emph{Computer Methods and Programs in Biomedicine}, 2005, in press.
+biomedical applications. \emph{Computer Methods and Programs in Biomedicine}, 2005, 78, 69-74.
 }
 
 \examples{
@@ -130,7 +130,8 @@ data(hdr)
 chplot(age~income|gender,data=hdr,log="x")
 # the iris dataset
 data(iris)
-chplot(Sepal.Length~Sepal.Width|Species,data=iris,bw=TRUE,legend=legend.control(cex=.6))
+chplot(Sepal.Length~Sepal.Width|Species,data=iris,bw=TRUE,
+       legend=legend.control(cex=.6))
 }
 
 \seealso{\code{\link{chadd}}, \code{\link{chull}}, \code{\link{bkde2D}}, \code{\link{legend.control}}. }
