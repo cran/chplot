@@ -16,3 +16,4 @@ chadd <- function(param,pos=1,add.fun,...){
 	plot(1,1,col=0,axes=FALSE,xlab="",ylab="")
 }
 
+

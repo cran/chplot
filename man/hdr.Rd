@@ -3,7 +3,7 @@
 \docType{data}
 \title{Deceased in Slovenia in 1998}
 \description{
-  Personal income tax payed (in SIT), age (in years) and gender for deceased in Slovenia in 1998.
+Personal income tax payed (in SIT), age (in years) and gender for deceased in Slovenia in 1998.
 }
 \usage{data(hdr)}
 \format{

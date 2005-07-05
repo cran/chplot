@@ -1,24 +1,36 @@
  chplot <-
 function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95, 
     band.power = 0.2, mar.den = FALSE, descriptives = "mean.sd", 
-    dlevel = 0.68, bw = FALSE, ratio = 0.75, plot.points = FALSE, 
-    log = "", xlab, ylab, col, lty, legend, ...) 
+    dlevel = 0.68, bw = FALSE, ratio = 0.75, plot.points=FALSE, 
+    log = "", xlab, ylab, col, lty, legend=TRUE, ...) 
 {
-    if (missing(legend)) 
-        legend <- legend.control(...)
+    if(is.logical(legend)){
+    	if(legend)nolegend <- FALSE
+    	else nolegend <- TRUE
+    	}
+    else nolegend <- FALSE
+    
+    legend.title <- legend$title
+    area.in <- legend$area.in
+    legend.pos <- legend$pos
+    
+    if(!is.logical(legend))legend$title <- legend$area.in <- legend$pos <- NULL
+        
+    #if (missing(addpoints)) 
+    #    addpoints <- addpoints.control(include=FALSE)
+      
     form <- latticeParseFormula(formula, data)
     if (length(names(form$condition)) > 1) 
         stop("Only 1 grouping variable is allowed")
     else if (is.null(form$condition)) {
         groups <- rep(1, length(form$left))
         nogroups <- TRUE
-        legend$include <- FALSE
+        nolegend <- TRUE
     }
     else {
         groups <- form$condition[[1]]
-        if (is.na(legend$title)) 
+        if (is.null(legend.title)) 
             legend.title <- names(form$condition)
-        else legend.title <- legend$title
         nogroups <- FALSE
     }
     if (missing(xlab)) 
@@ -29,9 +41,8 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
         ylabel <- form$left.name
     else ylabel <- ylab
     y <- form$left
-    if (is.na(legend$area.in)) 
-        area.in <- chull
-    else area.in <- legend$area.in
+    if (is.null(area.in))  area.in <- chull
+    
     par.old <- par(c("mfrow", "mar", "font", "fig", "usr"))
     on.exit(par(par.old))
     require(ellipse)
@@ -65,6 +76,7 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
         }
         else ltyps <- rep(1, nlev)
     }
+    
     na.check <- as.logical((!is.na(faktor)) * (!is.na(x)) * (!is.na(y)))
     if (sum(!na.check) > 0) {
         x <- x[na.check]
@@ -93,25 +105,20 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
         i <- 2:length(x)
         return(0.5 * sum(x[i] * y[i - 1] - x[i - 1] * y[i]))
     }
-    my.polygon <- function(d, data, faktor, area.in) {
+    my.polygon <- function(d, data, faktor) {
         points <- (data[as.integer(faktor) == d, ])[chull(data[as.integer(faktor) == 
             d, 1:2]), 1:2]
         polygon(points, lty = ltyps[d], border = colrs[d])
-        if (area.in) 
-            area.fun(points)/length(data[as.integer(faktor) == 
-                d])
+        area.fun(points)/length(data[as.integer(faktor) == d])
     }
-    my.line.list <- function(d, data, faktor, clevel, bandwidth, 
-        area.in) {
+    my.line.list <- function(d, data, faktor, clevel, bandwidth) {
         est <- bkde2D(data[as.integer(faktor) == d, ], bandwidth = nrow(data[as.integer(faktor) == 
             d, ])^(-bandwidth))
         line.list <- contourLines(est$x1, est$x2, est$fhat, nlevels = 1, 
             levels = 1 - clevel)
         line.list <- cbind(line.list[[1]][[2]], line.list[[1]][[3]])
         lines(line.list, lty = ltyps[d], col = colrs[d])
-        if (area.in) 
-            area.fun(line.list)/length(data[as.integer(faktor) == 
-                d, ])
+        area.fun(line.list)/length(data[as.integer(faktor) == d, ])
     }
     my.lines.mean <- function(d, x, y, faktor, sd, dlevel) {
         msd <- abs(qnorm((1 - dlevel)/2))
@@ -146,9 +153,9 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
     my.ellipse <- function(d, x, y, faktor, level) {
         podx <- x[as.integer(faktor) == d]
         pody <- y[as.integer(faktor) == d]
-        lines(ellipse(cov(cbind(podx, pody)), centre = c(mean(podx), 
-            mean(pody)), scale = c(sqrt(1/length(podx)), sqrt(1/length(pody))), 
-            level = level), lty = ltyps[d], col = colrs[d])
+        lines(ellipse(cor(cbind(podx, pody)), centre = c(mean(podx), 
+        mean(pody)), scale = c(sqrt(var(podx)/length(podx)), sqrt(var(pody)/length(pody))), 
+        level = level), lty = ltyps[d], col = colrs[d])
     }
     par(fig = c(0, 1, 0, 1))
     par(mar = c(5, 4, 2, 2))
@@ -157,19 +164,46 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
         par(fig = c(0, ratio, 0, ratio), mar = c(5, 4, 0, 0))
     }
     kode <- 1:nlevels(faktor)
-    if (!plot.points) 
-        plot(x, y, type = "n", xlab = xlabel, ylab = ylabel, 
-            log = log)
-    else plot(x, y, col = as.integer(faktor) + 1, xlab = xlabel, 
-        ylab = ylabel, log = log)
+        
+    args <- list(x = x, y = y, xlab = xlabel, ylab = ylabel, log = log,...)
+     
+    if(bw){
+    	if(is.null(args$pch))args$pch <- as.integer(faktor)+1
+    }
+    else{
+    	if(is.null(args$col))args$col <- as.integer(faktor)+1 
+    }
+    if(!plot.points) args$type <- "n"
+       
+    do.call("plot", args)
+  
     usr <- par("usr")
     is.xlog <- par("xlog")
     is.ylog <- par("ylog")
+    if(is.xlog){
+	na.check <- x>0
+	if (sum(!na.check) > 0) {
+	    x <- x[na.check]
+	    y <- y[na.check]
+	    faktor <- faktor[na.check]
+	    warning("Cases with x<=0 excluded listwise.", call. = FALSE)
+	}
+    }
+    if(is.ylog){
+    	na.check <- y>0
+    	if (sum(!na.check) > 0) {
+    	    x <- x[na.check]
+    	    y <- y[na.check]
+    	    faktor <- faktor[na.check]
+    	    warning("Cases with y<=0 excluded listwise.", call. = FALSE)
+    	}
+    }
     if (chull) 
         area <- unlist(lapply(kode, my.polygon, cbind(x, y), 
-            faktor, area.in))
+            faktor))
     else area <- unlist(lapply(kode, my.line.list, cbind(x, y), 
-        faktor, clevel, band.power, area.in))
+        faktor, clevel, band.power))
+    areaout <- area
     if (area.in) 
         area <- format(area, digits = 2)
     if (descriptives == "mean.sd") 
@@ -195,11 +229,12 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
         if (!mar.den) 
             maxbreak <- max(unlist(lapply(lista, maxi, 3)))
         height <- max(unlist(lapply(lista, maxi, 2))) * maxbreak
+        args2 <- list(x=c(min(x), max(x)),y=c(0, height),axes=FALSE,
+        	 xlab = "", ylab = "", type = "n")
         if (is.xlog) 
-            plot(c(min(x), max(x)), c(0, height), axes = FALSE, 
-                xlab = "", ylab = "", type = "n", log = "x")
-        else plot(c(min(x), max(x)), c(0, height), axes = FALSE, 
-            xlab = "", ylab = "", type = "n")
+            args2$log <- "x"
+        if(!is.null(args$xlim))args2$xlim <- args$xlim
+        do.call("plot",args2)
         for (i in 1:length(lista)) {
             points(lista[[i]][, 1], lista[[i]][, 2] * maxbreak, 
                 type = "l", lty = ltyps[i], col = colrs[i])
@@ -219,11 +254,12 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
         if (!mar.den) 
             maxbreak <- max(unlist(lapply(lista, maxi, 3)))
         height <- max(unlist(lapply(lista, maxi, 2))) * maxbreak
-        if (is.ylog) 
-            plot(c(0, height), c(min(y), max(y)), axes = FALSE, 
-                xlab = "", ylab = "", type = "n", log = "y")
-        else plot(c(0, height), c(min(y), max(y)), axes = FALSE, 
-            xlab = "", ylab = "", type = "n")
+        args2 <- list(c(0, height), c(min(y), max(y)), axes = FALSE, 
+                xlab = "", ylab = "", type = "n")
+	if (is.xlog) 
+	      args2$log <- "y"
+	if(!is.null(args$ylim))args2$ylim <- args$ylim
+        do.call("plot",args2)
         for (i in 1:length(lista)) {
             points(lista[[i]][, 2] * maxbreak, lista[[i]][, 1], 
                 type = "l", lty = ltyps[i], col = colrs[i])
@@ -249,35 +285,44 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
         temp1 <- sprintf(sprintf.format, line[2])
         paste(temp1, temp2, sep = " ")
     }
-    if (legend$include) {
+    
+    if (!nolegend){
+    	
         if (area.in) 
             par(font = 10)
         out <- 2
         extra <- 1
-        if (!is.na(legend$pos)) {
-            out <- as.numeric(legend$pos == "out")
+        if (!is.null(legend.pos)) {
+            out <- as.numeric(legend.pos == "out")
         }
         if (area.in) 
             legend.text <- apply(cbind(area, levels(faktor)), 
                 1, cum, sprintf.format)
         else legend.text <- levels(faktor)
+        l.args <- list(legend=legend.text)
         if (ratio > 0.75 & out != 1 | out == 0) {
             par(fig = c(0, ratio, 0, ratio), mar = c(5, 4, 0, 
                 0))
             xy <- locator(1)
-            if (!is.na(legend$cex)) 
+            if (!is.null(legend$cex)) 
                 cex.size <- legend$cex
             else cex.size <- 1
-            if (!is.na(legend$bty)) 
-                btype <- legend$bty
-            else btype <- "o"
+            if (is.null(legend$bty)) l.args$bty <- "n"
+	    if (is.null(legend$lwd)) l.args$lwd <- 2*cex.size
+	    if (is.null(legend$col)) l.args$col <- colrs
+            if (is.null(legend$lty)) l.args$lty <- ltyps
+            if (!is.null(legend$fill)) {
+            	l.args$fill <- colrs
+            	legend$fill <- NULL
+            	l.args$lty <- NULL
+            	l.args$lwd <- NULL
+            }
         }
         else {
             wz <- list(x = -0.05, y = 0.95)
             xy <- list(x = 0, y = 0.9)
-            if (!is.na(legend$cex)) 
-                cex.size <- legend$cex
-            else {
+           
+           
                 if (area.in) 
                   cex.size <- (2/3)^((ratio - 0.65) * 10) * 12/(max.len + 
                     6) * (0.93)
@@ -285,22 +330,31 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
                   10/max.len * (0.93)
                 if (cex.size > 1) 
                   cex.size <- 1
+           
+             if (!is.null(legend$cex)) 
+                cex.size <- legend$cex*cex.size
+            l.args$cex <- cex.size
+            text(wz, legend.title, pos = 4, cex = cex.size +  0.1)
+            if (is.null(legend$bty)) l.args$bty <- "n"
+            if (is.null(legend$lwd)) l.args$lwd <- 2*cex.size
+            if (is.null(legend$col)) l.args$col <- colrs
+            if (is.null(legend$lty)) l.args$lty <- ltyps
+            if (!is.null(legend$fill)) {
+		l.args$fill <- colrs
+		legend$fill <- NULL
+		l.args$lty <- NULL
+		l.args$lwd <- NULL
             }
-            text(wz, legend.title, pos = 4, cex = cex.size + 
-                0.1)
-            if (!is.na(legend$bty)) 
-                btype <- legend$bty
-            else btype <- "n"
         }
-        legend(xy, legend = legend.text, lty = ltyps, col = colrs, 
-            ncol = 1, bty = btype, cex = cex.size, lwd = 2 * 
-                cex.size)
+        l.args$x <-xy
+        l.args[names(legend)] <- legend
+	do.call("legend",l.args)
     }
     par(fig = c(0, 1, 0, 1), mar = c(5, 4, 2, 2), new = TRUE)
     par(usr = c(0, 1, 0, 1))
     plot(1, 1, type="n", axes = FALSE, xlab = "", ylab = "")
     if (ratio == 1) 
         usru <- usrr <- NA
-    out <- list(usrc = usr, usru = c(usr[1:2], usru[3:4]), usrr = c(usrr[1:2], 
+    out <- list(area=areaout,usrc = usr, usru = c(usr[1:2], usru[3:4]), usrr = c(usrr[1:2], 
         usr[3:4]), ratio = ratio, is.xlog = is.xlog, is.ylog = is.ylog)
 }

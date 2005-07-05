@@ -41,7 +41,8 @@ applies if \code{chull=FALSE}; bandwidth for bivariate density estimation
 is calculated as \code{(group size)^(-band.power)} for each group
 (default is 0.2).
 }
-\item{mar.den}{ logical; defines the nature of marginal distribution
+\item{mar.den}{
+logical; defines the type of marginal distribution
 plots. If \code{FALSE} (default), relative frequency polygons are
 plotted, otherwise density plots are drawn.
 }
@@ -56,7 +57,7 @@ cross at the median. Option \code{ellipse} plots confidence ellipses.
 }
 \item{dlevel}{
 the tolerance/confidence level applied if \code{descriptives=mean.sd} or
-\code{mean.sd}.
+\code{mean.se}.
 }
 \item{bw}{
 logical; if \code{TRUE}, the plot is produced in black-and-white. The
@@ -69,13 +70,11 @@ If the ratio is less or equal to 0.75, the default legend position is
 outside the main plot (i.e., in the top right corner), otherwise it is
 within the main plot (i.e., to be selected by the user with mouse).
 }
-\item{plot.points}{
-logical; if \code{true}, the points are drawn in addition to the convex
-hulls or density contours.
-}
+\item{plot.points}{are the points added to the original plot? Default is \code{FALSE}.}
+
 \item{log}{
- the character strings \code{"x"}, \code{"y"} or \code{"xy"} makes a
- specific (or both) axes logarithmic; the default, which does nothing, is \code{""}.
+the character strings \code{"x"}, \code{"y"} or \code{"xy"} makes a
+specific (or both) axes logarithmic; the default, which does nothing, is \code{""}.
 }
 \item{xlab}{
 a title for the x axis in the main plot; the default is the name of
@@ -88,10 +87,19 @@ the y variable.
 \item{col}{the plotting colors; vector of length equalling the number of groups.}
 \item{lty}{the type of line; vector of length equalling the number of groups.}
 \item{legend}{
-object of class \code{legend.control} specifying various parameters for the legend.
- Default is \code{legend.control(...)}. 
+either logical, in which case the default is \code{TRUE} and a legend is drawn with the default settings,
+or a list of legend parameters. For legend parameters, see the \code{legend} function; two additional
+parameters are allowed: \code{area.in} (logical; specifies whether the area of convex hull per point
+is displayed; default is \code{TRUE} if \code{chull=TRUE} and \code{FALSE} otherwise), and \code{pos} (\code{in} or \code{out};
+default depends on \code{ratio} value; if \code{in} is chosen, the legend is positioned by the user with mouse,
+while \code{out} places the legend in the top right corner of the plotting area).
+Note that the default legend parameters are not the same as in the \code{legend} function:
+default \code{title} is the name of the grouping variable, default \code{bty} depends on legend position
+(\code{"o"} if inside and \code{"n"} if outside), while default \code{cex} is calculated on the basis of \code{ratio},
+and the \code{cex} option is the multiplier of that default.
 }
-\item{...}{other arguments will be passed to \code{legend.control}}.
+\item{...}{other arguments will be passed to the main plotting region and will affect points
+if \code{plot.points=TRUE}.}
 }
 
 \details{
@@ -102,12 +110,13 @@ frequencies are rescaled in order to make the plots immediately
 comparable (the same is true for the density curves).
 
 The default density contour might not fit into the plot - this can be
-avoided by decreasing the \code{clevel}. In such cases the
-area does not provide a sensible measure.
+avoided by decreasing the \code{clevel}. In case of broken contours, the
+area per point is not a sensible measure.
 }
 
 \value{
 A list with components:
+\item{area}{the area of convex hull per point for each group.}
 \item{usrc}{the limits of the central plotting region.}
 \item{usru}{the limits of the top left plotting region.}
 \item{usrr}{the limits of the bottom right plotting region.}
@@ -131,9 +140,11 @@ chplot(age~income|gender,data=hdr,log="x")
 # the iris dataset
 data(iris)
 chplot(Sepal.Length~Sepal.Width|Species,data=iris,bw=TRUE,
-       legend=legend.control(cex=.6))
+       legend=list(cex=.6))
+chplot(Petal.Length ~ Petal.Width | Species, data = iris,
+      legend = list(cex = 0.6),plot.points=TRUE,pch = 18, cex = 0.5)
 }
 
-\seealso{\code{\link{chadd}}, \code{\link{chull}}, \code{\link{bkde2D}}, \code{\link{legend.control}}. }
+\seealso{\code{\link{chadd}}, \code{\link{chull}}, \code{\link{bkde2D}}. }
 
 \keyword{hplot}

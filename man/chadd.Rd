@@ -18,10 +18,8 @@ the plotting region to which an element is to be added: \code{1} for the main pl
 \code{3} for top right (the legend),
 \code{4} for bottom right (marginal distribution plot of the y-variable).
 }
-\item{add.fun}{the function to be applied.
-}
-\item{...}{
- optional parameters to \code{add.fun}.}
+\item{add.fun}{the function to be applied.}
+\item{...}{optional parameters to \code{add.fun}, separated by commas.}
 }
 
 \examples{
