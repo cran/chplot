@@ -5,17 +5,21 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
     log = "", xlab, ylab, col, lty, legend=TRUE, ...) 
 {
     if(is.logical(legend)){
+    	lglegend <- TRUE
     	if(legend)nolegend <- FALSE
     	else nolegend <- TRUE
     	}
-    else nolegend <- FALSE
-    
+    else {
+    nolegend <- FALSE
+    lglegend <- FALSE
+    }
+   if(lglegend) legend <- list(title=NULL, area.in=NULL,pos=NULL,cex=NULL,bty=NULL,lwd=NULL,col=NULL,lty=NULL,fill=NULL)
+ 
     legend.title <- legend$title
     area.in <- legend$area.in
     legend.pos <- legend$pos
-    
-    if(!is.logical(legend))legend$title <- legend$area.in <- legend$pos <- NULL
-        
+    legend$title <- legend$area.in <- legend$pos <- NULL
+
     #if (missing(addpoints)) 
     #    addpoints <- addpoints.control(include=FALSE)
       
@@ -347,8 +351,8 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
             }
         }
         l.args$x <-xy
-        l.args[names(legend)] <- legend
-	do.call("legend",l.args)
+        if(!lglegend) l.args[names(legend)] <- legend
+        do.call("legend",l.args)
     }
     par(fig = c(0, 1, 0, 1), mar = c(5, 4, 2, 2), new = TRUE)
     par(usr = c(0, 1, 0, 1))
