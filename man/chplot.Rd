@@ -13,7 +13,7 @@
 \usage{
 chplot(formula,data,chull=TRUE,clevel=0.95,band.power=.2,
 mar.den=FALSE,descriptives="mean.sd",dlevel=0.68,bw=FALSE,ratio=.75,
-plot.points=FALSE,log="",xlab,ylab,col,lty,legend,...)
+plot.points=FALSE,log="",xlab,ylab,col,lty,lwd,legend=TRUE,...)
 }
 \arguments{
 \item{formula}{
@@ -86,6 +86,7 @@ the y variable.
 }
 \item{col}{the plotting colors; vector of length equalling the number of groups.}
 \item{lty}{the type of line; vector of length equalling the number of groups.}
+\item{lwd}{line width; vector of length equalling the number of groups.}
 \item{legend}{
 either logical, in which case the default is \code{TRUE} and a legend is drawn with the default settings,
 or a list of legend parameters. For legend parameters, see the \code{legend} function; two additional
@@ -135,6 +136,7 @@ biomedical applications. \emph{Computer Methods and Programs in Biomedicine}, 20
 
 \examples{
 # the hdr dataset
+postscript("file.ps",fonts="mono")         # For screen output, skip this
 data(hdr)
 chplot(age~income|gender,data=hdr,log="x")
 # the iris dataset
@@ -143,6 +145,7 @@ chplot(Sepal.Length~Sepal.Width|Species,data=iris,bw=TRUE,
        legend=list(cex=.6))
 chplot(Petal.Length ~ Petal.Width | Species, data = iris,
       legend = list(cex = 0.6),plot.points=TRUE,pch = 18, cex = 0.5)
+dev.off()		# For screen output, skip this
 }
 
 \seealso{\code{\link{chadd}}, \code{\link{chull}}, \code{\link{bkde2D}}. }

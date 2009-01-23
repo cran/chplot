@@ -2,7 +2,7 @@
 function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95, 
     band.power = 0.2, mar.den = FALSE, descriptives = "mean.sd", 
     dlevel = 0.68, bw = FALSE, ratio = 0.75, plot.points=FALSE, 
-    log = "", xlab, ylab, col, lty, legend=TRUE, ...) 
+    log = "", xlab, ylab, col, lty,lwd, legend=TRUE, ...) 
 {
     if(is.logical(legend)){
     	lglegend <- TRUE
@@ -47,7 +47,7 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
     y <- form$left
     if (is.null(area.in))  area.in <- chull
     
-    par.old <- par(c("mfrow", "mar", "font", "fig", "usr"))
+    par.old <- par(c("mfrow", "mar", "family", "fig", "usr"))
     on.exit(par(par.old))
     require(ellipse)
     require(KernSmooth)
@@ -68,7 +68,7 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
         if (!missing(col)) {
             colrs <- col
             if (length(col) != nlev) 
-                stop("length of col is not equal to ", nlev)
+                stop("length of col is not equal to ", nlev," (the number of groups)")
         }
         else if (nogroups) 
             colrs <- 1
@@ -76,11 +76,16 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
         if (!missing(lty)) {
             ltyps <- lty
             if (length(ltyps) != nlev) 
-                stop("length of lty is not equal to ", nlev)
+                stop("length of lty is not equal to ", nlev," (the number of groups)")
         }
         else ltyps <- rep(1, nlev)
     }
-    
+    if (!missing(lwd)) {
+                lwdps <- lwd
+                if (length(lwdps) != nlev) 
+                    stop("length of lwd is not equal to ", nlev, " (the number of groups)")
+    }
+    else lwdps=rep(1,nlev)
     na.check <- as.logical((!is.na(faktor)) * (!is.na(x)) * (!is.na(y)))
     if (sum(!na.check) > 0) {
         x <- x[na.check]
@@ -112,7 +117,7 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
     my.polygon <- function(d, data, faktor) {
         points <- (data[as.integer(faktor) == d, ])[chull(data[as.integer(faktor) == 
             d, 1:2]), 1:2]
-        polygon(points, lty = ltyps[d], border = colrs[d])
+        polygon(points, lty = ltyps[d],lwd = lwdps[d] , border = colrs[d])
         area.fun(points)/length(data[as.integer(faktor) == d])
     }
     my.line.list <- function(d, data, faktor, clevel, bandwidth) {
@@ -121,7 +126,7 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
         line.list <- contourLines(est$x1, est$x2, est$fhat, nlevels = 1, 
             levels = 1 - clevel)
         line.list <- cbind(line.list[[1]][[2]], line.list[[1]][[3]])
-        lines(line.list, lty = ltyps[d], col = colrs[d])
+        lines(line.list, lty = ltyps[d],lwd = lwdps[d], col = colrs[d])
         area.fun(line.list)/length(data[as.integer(faktor) == d, ])
     }
     my.lines.mean <- function(d, x, y, faktor, sd, dlevel) {
@@ -131,18 +136,18 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
         if (sd) {
             lines(c(mean(podx) - msd * sqrt(var(podx)), mean(podx) + 
                 msd * sqrt(var(podx))), c(mean(pody), mean(pody)), 
-                lty = ltyps[d], col = colrs[d])
+                lty = ltyps[d],lwd = lwdps[d], col = colrs[d])
             lines(c(mean(podx), mean(podx)), c(mean(pody) - msd * 
                 sqrt(var(pody)), mean(pody) + msd * sqrt(var(pody))), 
-                lty = ltyps[d], col = colrs[d])
+                lty = ltyps[d],lwd = lwdps[d], col = colrs[d])
         }
         else {
             lines(c(mean(podx) - msd * sqrt(var(podx)/length(podx)), 
                 mean(podx) + msd * sqrt(var(podx)/length(podx))), 
-                c(mean(pody), mean(pody)), lty = ltyps[d], col = colrs[d])
+                c(mean(pody), mean(pody)), lty = ltyps[d],lwd = lwdps[d], col = colrs[d])
             lines(c(mean(podx), mean(podx)), c(mean(pody) - msd * 
                 sqrt(var(pody)/length(pody)), mean(pody) + msd * 
-                sqrt(var(pody)/length(pody))), lty = ltyps[d], 
+                sqrt(var(pody)/length(pody))), lty = ltyps[d],lwd = lwdps[d], 
                 col = colrs[d])
         }
     }
@@ -150,16 +155,16 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
         podx <- x[as.integer(faktor) == d]
         pody <- y[as.integer(faktor) == d]
         lines(c(quantile(podx, 0.25), quantile(podx, 0.75)), 
-            c(median(pody), median(pody)), lty = ltyps[d], col = colrs[d])
+            c(median(pody), median(pody)), lty = ltyps[d],lwd = lwdps[d], col = colrs[d])
         lines(c(median(podx), median(podx)), c(quantile(pody, 
-            0.25), quantile(pody, 0.75)), lty = ltyps[d], col = colrs[d])
+            0.25), quantile(pody, 0.75)), lty = ltyps[d],lwd = lwdps[d], col = colrs[d])
     }
     my.ellipse <- function(d, x, y, faktor, level) {
         podx <- x[as.integer(faktor) == d]
         pody <- y[as.integer(faktor) == d]
         lines(ellipse(cor(cbind(podx, pody)), centre = c(mean(podx), 
         mean(pody)), scale = c(sqrt(var(podx)/length(podx)), sqrt(var(pody)/length(pody))), 
-        level = level), lty = ltyps[d], col = colrs[d])
+        level = level), lty = ltyps[d],lwd = lwdps[d], col = colrs[d])
     }
     par(fig = c(0, 1, 0, 1))
     par(mar = c(5, 4, 2, 2))
@@ -241,7 +246,7 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
         do.call("plot",args2)
         for (i in 1:length(lista)) {
             points(lista[[i]][, 1], lista[[i]][, 2] * maxbreak, 
-                type = "l", lty = ltyps[i], col = colrs[i])
+                type = "l", lty = ltyps[i],lwd = lwdps[i], col = colrs[i])
         }
         usru <- par("usr")
         ticks <- round(height/3, 2)
@@ -266,7 +271,7 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
         do.call("plot",args2)
         for (i in 1:length(lista)) {
             points(lista[[i]][, 2] * maxbreak, lista[[i]][, 1], 
-                type = "l", lty = ltyps[i], col = colrs[i])
+                type = "l", lty = ltyps[i],lwd = lwdps[i], col = colrs[i])
         }
         usrr <- par("usr")
         ticks <- round(height/3, 2)
@@ -277,7 +282,7 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
         par(fig = c(ratio, 1, ratio, 1), mar = c(0, 0, 2, 2), 
             new = TRUE)
         plot(1, 1, col = 0, axes = FALSE, xlim = c(0, 1), ylim = c(0, 
-            1))
+            1),fonts="mono")
     }
     max.len <- max(nchar(levels(faktor)))
     if (max.len < 10) 
@@ -293,7 +298,7 @@ function (formula, data = parent.frame(), chull = TRUE, clevel = 0.95,
     if (!nolegend){
     	
         if (area.in) 
-            par(font = 10)
+            par(family = "mono")
         out <- 2
         extra <- 1
         if (!is.null(legend.pos)) {
